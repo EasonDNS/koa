@@ -6,6 +6,7 @@ import mount from 'koa-mount';
 import path from 'path';
 import router from './routes/index';
 import dotenv from 'dotenv';
+
 dotenv.config();
 const app = new Koa();
 app.use(
@@ -28,9 +29,14 @@ app.use(mount('/file', KoaStatic(path.join(__dirname, '../public'))));
 
 app.use(router.routes());
 app.use(router.allowedMethods());
+// 给 JSON.stringify 加 BigInt 处理器
+// 如果你不想每个地方都 Number()，可以统一处理：
+(BigInt.prototype as any).toJSON = function () {
+  return this.toString();
+};
 
 app.listen(process.env.PORT, () => {
-    console.log("routes" , router.routes)
+  console.log('routes', router.routes);
   console.log(`🚀 项目启动成功: http://localhost::${process.env.PORT}`);
   console.log(`📂 静态资源路径: http://localhost::${process.env.PORT}/public/`);
   console.log(`server is running at http://localhost:${process.env.PORT}`);
