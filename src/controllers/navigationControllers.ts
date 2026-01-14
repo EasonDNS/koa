@@ -20,6 +20,7 @@ const add = async (ctx: Context) => {
     icon: data.icon,
     category: data.category,
     url: data.url,
+    ids: data.ids,
   });
   ctx.body = {
     code: 11,

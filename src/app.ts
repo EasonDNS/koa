@@ -37,7 +37,7 @@ app.use(router.allowedMethods());
 
 app.listen(process.env.PORT, () => {
   console.log('routes', router.routes);
-  console.log(`🚀 项目启动成功: http://localhost::${process.env.PORT}`);
-  console.log(`📂 静态资源路径: http://localhost::${process.env.PORT}/public/`);
+  console.log(`🚀 项目启动成功: http://localhost:${process.env.PORT}`);
+  console.log(`📂 静态资源路径: http://localhost:${process.env.PORT}/file/`);
   console.log(`server is running at http://localhost:${process.env.PORT}`);
 });
