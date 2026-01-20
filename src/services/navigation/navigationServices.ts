@@ -1,5 +1,6 @@
-import pool from '../models/db';
-import type { INavigationField } from './Types';
+import pool from '../../models/db';
+import type { INavigationField, INavigationPatch } from './Types';
+import { publicConn } from '../../utils/navigation/navigation.tools';
 
 class NavigationServices {
   //添加 --------------------------------------------------------------------------------------
@@ -9,17 +10,14 @@ class NavigationServices {
     console.log(data);
     // 定义连接变量，以便在 try/catch/finally 中都能访问
     let conn: any;
-
     try {
       // 1. 从连接池获取一个连接
       conn = await pool();
-
       // 2. 判断是需要生成 ids 还是直接插入
       // =================  CASE 1: 自动生成 ids (核心事务逻辑) =================
       if (!data.ids) {
         // 2a. 开始事务
         await conn.beginTransaction();
-        console.log('Transaction started: generating new ids...');
         // 2b. 查询当前最大ids并锁定，防止并发冲突
         // 注意：这里使用 conn.query()
         const sqlSelect = `SELECT IFNULL(MAX(ids), 0) + 1 as nextId FROM navigation FOR UPDATE;`;
@@ -37,9 +35,9 @@ class NavigationServices {
           fields.push('category');
           values.push(':category');
         }
-        if (data.icon) {
-          fields.push('icon');
-          values.push(':icon');
+        if (data.imgUrl) {
+          fields.push('imgUrl');
+          values.push(':imgUrl');
         }
         fields.push('ids'); // 必须包含 ids
         values.push(':ids');
@@ -64,9 +62,9 @@ class NavigationServices {
           fields.push('category');
           values.push(':category');
         }
-        if (data.icon) {
-          fields.push('icon');
-          values.push(':icon');
+        if (data.imgUrl) {
+          fields.push('imgUrl');
+          values.push(':imgUrl');
         }
         fields.push('ids');
         values.push(':ids');
@@ -96,57 +94,37 @@ class NavigationServices {
     }
 
     // end----------------------------------------------------------------------------------
-
-    //   const fields: string[] = ['name', 'url'];
-    //   const values: string[] = [':name', ':url'];
-    //   // 判断data中是否有这两个值 ,有就添加这在sql语句中传了我就添加这个字段-
-    //   // -------------------------------------------------------------------------------------
-    //   if (data.category) {
-    //     fields.push('category');
-    //     values.push(':category');
-    //   }
-    //   if (data.icon) {
-    //     fields.push('icon');
-    //     values.push(':icon');
-    //   }
-    //   if (data.ids) {
-    //     fields.push('ids');
-    //     values.push(':@next_ids');
-    //   }
-    //
-    //   const sql = `INSERT INTO navigation (${fields.join(', ')})
-    // VALUES (${values.join(', ')})`;
-    //   let conn: any;
-    //   try {
-    //     conn = await pool();
-    //     if (!data.ids) {
-    //       await conn.beginTransaction();
-    //
-    //       const [rows]: [any[], any] = await conn.query(
-    //         'SELECT IFNULL(MAX(ids), 0) + 1 as nextId FROM navigation FOR UPDATE'
-    //       );
-    //       const nextId = rows[0].nextId;
-    //       data.ids = nextId;
-    //     }
-    //   } catch (error) {
-    //     console.log(error);
-    //   } finally {
-    //     console.log('finally');
-    //   }
-    //添加一个判断--------------------------------------------------------------------------------------
-    // if (conn) {
-    //   return await conn.execute(sql, data);
-    // }
   }
   // 查询所有数据 --------------------------------------------------------------------------------------
   async getAll() {
-    const sql = 'SELECT * FROM navigation';
+    const sql = 'select * from navigation order by ids;';
     const conn = await pool();
     if (conn) {
       return await conn.execute(sql);
     } else return;
   }
+  async patch(data: INavigationPatch) {
+    const id = data.id;
+    const ids = data.ids;
+    const name = data.ids;
 
+    const sql = `update navigation set ids = ${ids} where id = ${id} ;`;
+    const res = await publicConn<{ affectedRows: number }>(sql, [
+      id,
+      ids,
+      name,
+    ]);
+    //这个应该是和前端 publicConn 传入的T 相对应 去看sql执行的结果 1 为改变了某行,0 为没有改变
+    if (res.data!.affectedRows === 0) {
+      res.code = 1;
+      res.message = `在执行 ${sql} 时没有改变任何信息`;
+      return res;
+    } else {
+      res.code = 0;
+      res.message = `在执行 ${sql} 改变了name 为 ${name}的ids值为 ${ids} !`;
+      return res;
+    }
+  }
   async test(data: any) {
     console.log(data);
   }

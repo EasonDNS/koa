@@ -6,7 +6,7 @@ import mount from 'koa-mount';
 import path from 'path';
 import router from './routes/index';
 import dotenv from 'dotenv';
-
+import { errorHandler } from './error';
 dotenv.config();
 const app = new Koa();
 app.use(
@@ -34,7 +34,7 @@ app.use(router.allowedMethods());
 (BigInt.prototype as any).toJSON = function () {
   return this.toString();
 };
-
+app.on('error', errorHandler);
 app.listen(process.env.PORT, () => {
   console.log('routes', router.routes);
   console.log(`🚀 项目启动成功: http://localhost:${process.env.PORT}`);
